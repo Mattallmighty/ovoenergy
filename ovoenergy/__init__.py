@@ -48,6 +48,12 @@ _LOGGER = logging.getLogger(__name__)
 class OVOEnergy:
     """Class for OVOEnergy."""
 
+    def __init__(self, country='UK'):
+        self.country = country
+        self.base_url = "https://my.ovoenergy.com"
+        if country.lower() == 'australia':
+            self.base_url = "https://my.ovoenergy.com.au"
+
     custom_account_id: int | None = None
 
     def __init__(
@@ -127,7 +133,8 @@ class OVOEnergy:
             _LOGGER.debug("OAuth token expired, refreshing: %s", self.oauth)
 
             if not await self.get_token() or self.oauth is None:
-                raise OVOEnergyAPINotAuthorized("No OAuth token set after refresh")
+                raise OVOEnergyAPINotAuthorized(
+                    "No OAuth token set after refresh")
 
             _LOGGER.debug("OAuth token refreshed: %s", self.oauth)
 
@@ -148,7 +155,8 @@ class OVOEnergy:
             response.raise_for_status()
 
         if with_authorization and response.status in [401, 403]:
-            raise OVOEnergyAPINotAuthorized(f"Not authorized: {response.status}")
+            raise OVOEnergyAPINotAuthorized(
+                f"Not authorized: {response.status}")
 
         return response
 
@@ -159,7 +167,7 @@ class OVOEnergy:
     ) -> bool:
         """Authenticate."""
         response = await self._request(
-            "https://my.ovoenergy.com/api/v2/auth/login",
+            "https://{self.base_url}/api/v2/auth/login",
             "POST",
             json={
                 "username": username,
@@ -188,7 +196,7 @@ class OVOEnergy:
     async def get_token(self) -> OAuth | Literal[False]:
         """Get token."""
         response = await self._request(
-            "https://my.ovoenergy.com/api/v2/auth/token",
+            "https://{self.base_url}/api/v2/auth/token",
             "GET",
             with_authorization=False,
         )
@@ -202,7 +210,8 @@ class OVOEnergy:
             expires_in=json_response["expiresIn"],
             refresh_expires_in=json_response["refreshExpiresIn"],
             # Set expires_at to current time plus expiresIn (minutes)
-            expires_at=datetime.now() + timedelta(minutes=json_response["expiresIn"]),
+            expires_at=datetime.now() + \
+            timedelta(minutes=json_response["expiresIn"]),
         )
 
         return self._oauth
@@ -273,7 +282,8 @@ class OVOEnergy:
         )
 
         response = await self._request(
-            f"https://smartpaymapi.ovoenergy.com/usage/api/daily/{self.account_id}?date={date}",
+            f"https://smartpaymapi.ovoenergy.com/usage/api/daily/{
+                self.account_id}?date={date}",
             "GET",
         )
         json_response = await response.json()
@@ -303,7 +313,8 @@ class OVOEnergy:
                                 )
                                 if "meterReadings" in usage
                                 else None,
-                                has_half_hour_data=usage.get("hasHalfHourData", None),
+                                has_half_hour_data=usage.get(
+                                    "hasHalfHourData", None),
                                 cost=OVOCost(
                                     amount=usage["cost"]["amount"],
                                     currency_unit=usage["cost"]["currencyUnit"],
@@ -339,7 +350,8 @@ class OVOEnergy:
                                 )
                                 if "meterReadings" in usage
                                 else None,
-                                has_half_hour_data=usage.get("hasHalfHourData", None),
+                                has_half_hour_data=usage.get(
+                                    "hasHalfHourData", None),
                                 cost=OVOCost(
                                     amount=usage["cost"]["amount"],
                                     currency_unit=usage["cost"]["currencyUnit"],
@@ -363,7 +375,8 @@ class OVOEnergy:
         )
 
         response = await self._request(
-            f"https://smartpaymapi.ovoenergy.com/usage/api/half-hourly/{self.account_id}?date={date}",
+            f"https://smartpaymapi.ovoenergy.com/usage/api/half-hourly/{
+                self.account_id}?date={date}",
             "GET",
         )
         json_response = await response.json()
@@ -417,7 +430,8 @@ class OVOEnergy:
             raise OVOEnergyNoAccount("No account found")
 
         response = await self._request(
-            f"https://smartpaymapi.ovoenergy.com/orex/api/plans/{self.account_id}",
+            f"https://smartpaymapi.ovoenergy.com/orex/api/plans/{
+                self.account_id}",
             "GET",
         )
         json_response = await response.json()
@@ -509,7 +523,8 @@ class OVOEnergy:
             raise OVOEnergyNoAccount("No account found")
 
         response = await self._request(
-            f"https://smartpaymapi.ovoenergy.com/carbon-api/{self.account_id}/footprint",
+            f"https://smartpaymapi.ovoenergy.com/carbon-api/{
+                self.account_id}/footprint",
             "GET",
         )
         json_response = await response.json()
