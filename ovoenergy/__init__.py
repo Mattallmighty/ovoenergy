@@ -50,9 +50,11 @@ class OVOEnergy:
 
     def __init__(self, country='UK'):
         self.country = country
-        self.base_url = "https://my.ovoenergy.com"
+        self.base_url = "my.ovoenergy.com"
+        self.getdata_url = "smartpaymapi.ovoenergy.com"
         if country.lower() == 'australia':
-            self.base_url = "https://my.ovoenergy.com.au"
+            self.base_url = "my.ovoenergy.com.au"
+            self.getdata_url = "my.ovoenergy.com.au"
 
     custom_account_id: int | None = None
 
@@ -167,7 +169,7 @@ class OVOEnergy:
     ) -> bool:
         """Authenticate."""
         response = await self._request(
-            "https://{self.base_url}/api/v2/auth/login",
+            f"https://{self.base_url}/api/v2/auth/login",
             "POST",
             json={
                 "username": username,
@@ -196,7 +198,7 @@ class OVOEnergy:
     async def get_token(self) -> OAuth | Literal[False]:
         """Get token."""
         response = await self._request(
-            "https://{self.base_url}/api/v2/auth/token",
+            f"https://{self.base_url}/api/v2/auth/token",
             "GET",
             with_authorization=False,
         )
@@ -219,7 +221,7 @@ class OVOEnergy:
     async def bootstrap_accounts(self) -> BootstrapAccounts:
         """Bootstrap accounts."""
         response = await self._request(
-            "https://smartpaymapi.ovoenergy.com/first-login/api/bootstrap/v2/",
+            f"https://{self.getdata_url}/first-login/api/bootstrap/v2/",
             "GET",
         )
         json_response = await response.json()
@@ -282,7 +284,7 @@ class OVOEnergy:
         )
 
         response = await self._request(
-            f"https://smartpaymapi.ovoenergy.com/usage/api/daily/{
+            f"https://{self.getdata_url}/usage/api/daily/{
                 self.account_id}?date={date}",
             "GET",
         )
@@ -375,7 +377,7 @@ class OVOEnergy:
         )
 
         response = await self._request(
-            f"https://smartpaymapi.ovoenergy.com/usage/api/half-hourly/{
+            f"https://{self.getdata_url}/usage/api/half-hourly/{
                 self.account_id}?date={date}",
             "GET",
         )
@@ -430,7 +432,7 @@ class OVOEnergy:
             raise OVOEnergyNoAccount("No account found")
 
         response = await self._request(
-            f"https://smartpaymapi.ovoenergy.com/orex/api/plans/{
+            f"https://{self.getdata_url}/orex/api/plans/{
                 self.account_id}",
             "GET",
         )
@@ -523,7 +525,7 @@ class OVOEnergy:
             raise OVOEnergyNoAccount("No account found")
 
         response = await self._request(
-            f"https://smartpaymapi.ovoenergy.com/carbon-api/{
+            f"https://{self.getdata_url}/carbon-api/{
                 self.account_id}/footprint",
             "GET",
         )
@@ -567,7 +569,7 @@ class OVOEnergy:
     async def get_carbon_intensity(self):
         """Get carbon intensity."""
         response = await self._request(
-            "https://smartpaymapi.ovoenergy.com/carbon-bff/carbonintensity",
+            f"https://{self.getdata_url}/carbon-bff/carbonintensity",
             "GET",
         )
         json_response = await response.json()
