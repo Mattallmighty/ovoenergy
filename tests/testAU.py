@@ -1,6 +1,10 @@
+import json
 import requests
+from bs4 import BeautifulSoup
 
 # Step 1: Retrieve initial cookie
+username = "test@homeAssistant.com"
+password = "randomPassword"
 login_url = "https://login.ovoenergy.com.au/login"
 session = requests.Session()
 response = session.get(login_url)
@@ -12,49 +16,63 @@ response = session.get(login_url)
 #     print("Failed to retrieve cookie")
 #     exit()
 
-# 'cookie': cookie - use this if needed for step 2
+cookie = "cookieTest"
 
 # Step 2: Submit the login form data
 login_api_url = "https://login.ovoenergy.com.au/usernamepassword/login"
 headers = {
     'accept-language': 'en-GB,en;q=0.9',
-    'auth0-client': 'FakeAuth',
-    'content-type': 'application/json'
+    'auth0-client': 'UnsureIfStaticOrUniquePerCustomer',
+    'content-type': 'application/json',
+    'cookie': cookie
 }
 data = {
-    "client_id": "FakeClientID",
-    # make sure to replace further sensitive data if needed
-    # the rest of the payload as per your data
-    "username": "Fakeemail@test.com",
-    "password": "FakePassword",
+    "client_id": "UnsureIfStaticOrUniquePerCustomer",
+    "tenant": "ovoenergyau",
+    "scope": "openid profile email offline_access",
+    "audience": "https://login.ovoenergy.com.au/api",
+    "_csrf": "Zc4Vf8Qr-YuivASXoUrMmnfEh8QXtyzHVzbo",
+    "username": username,
+    "password": password,
     "connection": "prod-myovo-auth"
 }
 
 response = session.post(login_api_url, json=data, headers=headers)
-print(response)
-token = response.json().get('wresult.value', '')
-if not token:
-    print("Failed to get the authentication token.")
-    exit()
+soup = BeautifulSoup(response.text, 'html.parser')
+token = soup.find('input', {'name': 'wresult'}).get('value', '')
+print("Token:", token)
 
 # Step 3: Make GraphQL API call
+cookie = "cookieForTesting"
 graphql_url = "https://my.ovoenergy.com.au/graphql"
 graphql_headers = {
     'authorization': token,
     'content-type': 'application/json',
     'myovo-id-token': token,
-    # the rest of the headers as per your data
+    'cookie': cookie,
 }
 graphql_query = """
-{
-  "operationName": "GetHourlyUsageData",
-  "variables": {"input": {"id": "testID", "system": "KALUZA"}},
-  "query": "query GetHourlyUsageData($input: GetAccountInfoInput) {...}"
-}
-"""
-response = session.post(
-    graphql_url, headers=graphql_headers, json=graphql_query)
-print(response.json())
+ {
+   "operationName": "GetHourlyUsageData",
+   "variables": {"input": {"id": "301234567", "system": "KALUZA"}},
+   "query": "query GetHourlyUsageData($input: GetAccountInfoInput) "
+ }
+ """
+
+response = session.post(graphql_url, headers=headers,
+                        json=json.dumps(graphql_query))
+
+# Check the HTTP status code
+if response.status_code == 200:
+    try:
+        json_data = response.json()
+        print(json_data)
+    except ValueError as e:
+        print("Failed to decode JSON:", e)
+else:
+    print(f"Request failed with status: {response.status_code}")
+    print("Response content:", response.text)
+
 
 # Step 4: Finish the script
 print("Finish test script")
