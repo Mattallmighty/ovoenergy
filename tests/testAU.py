@@ -48,7 +48,7 @@ graphql_headers = {
 graphql_query = """
 {
   "operationName": "GetHourlyUsageData",
-  "variables": {"input": {"id": "30129544", "system": "KALUZA"}},
+  "variables": {"input": {"id": "testID", "system": "KALUZA"}},
   "query": "query GetHourlyUsageData($input: GetAccountInfoInput) {...}"
 }
 """
